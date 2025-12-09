@@ -1,0 +1,45 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{values.name}}
+  description: ${{values.description}}
+  annotations:
+    github.com/project-slug: ${{values.orgName}}/${{values.name}}
+    backstage.io/techdocs-ref: dir:.
+    grafana.com/service-name: ${{values.name}}
+  tags:
+    - data-pipeline
+    - python
+    {%- if values.computeEngine == "spark" %}
+    - spark
+    {%- elif values.computeEngine == "polars" %}
+    - polars
+    {%- elif values.computeEngine == "dask" %}
+    - dask
+    {%- endif %}
+    {%- if values.pipelineType == "batch" %}
+    - batch
+    {%- elif values.pipelineType == "streaming" %}
+    - streaming
+    {%- endif %}
+  links:
+    - url: https://grafana.yourcompany.com/explore?orgId=1&left=%5B%22now-1h%22,%22now%22,%22Tempo%22,%7B%22query%22:%22${{values.name}}%22%7D%5D
+      title: Grafana Traces
+      icon: dashboard
+spec:
+  type: service
+  lifecycle: production
+  owner: ${{values.owner}}
+  system: data-platform
+  {%- if values.sourceType == "s3" %}
+  consumesApis:
+    - s3-api
+  {%- endif %}
+  {%- if values.sourceType == "postgres" %}
+  dependsOn:
+    - resource:postgres-database
+  {%- endif %}
+  {%- if values.sourceType == "kafka" %}
+  dependsOn:
+    - resource:kafka-cluster
+  {%- endif %}

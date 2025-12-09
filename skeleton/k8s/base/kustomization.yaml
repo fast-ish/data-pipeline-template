@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - serviceaccount.yaml
+  - configmap.yaml
+{%- if values.pipelineType == "batch" %}
+  - cronjob.yaml
+{%- else %}
+  - deployment.yaml
+{%- endif %}
+
+commonLabels:
+  app.kubernetes.io/name: ${{values.name}}
+  app.kubernetes.io/component: pipeline

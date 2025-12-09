@@ -1,0 +1,287 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: data-pipeline-template
+  title: Data Pipeline (Golden Path)
+  description: Production-ready data pipeline with Grafana observability and enterprise patterns
+  tags:
+    - python
+    - data
+    - pipeline
+    - etl
+    - golden-path
+spec:
+  owner: platform
+  type: data-pipeline
+
+  parameters:
+    - title: Component Info
+      required:
+        - name
+        - owner
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Unique name of the pipeline
+          pattern: '^[a-z][a-z0-9-]*$'
+          ui:autofocus: true
+        owner:
+          title: Owner Team
+          type: string
+          description: Team that owns this pipeline
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+        description:
+          title: Description
+          type: string
+          description: Description of this pipeline
+
+    - title: Pipeline Type
+      required:
+        - pipelineType
+      properties:
+        pipelineType:
+          title: Pipeline Type
+          type: string
+          enum:
+            - batch
+            - streaming
+            - hybrid
+          enumNames:
+            - "Batch (Scheduled)"
+            - "Streaming (Real-time)"
+            - "Hybrid (Batch + Streaming)"
+          default: batch
+          description: Type of data pipeline
+        orchestrator:
+          title: Orchestrator
+          type: string
+          enum:
+            - airflow
+            - dagster
+            - prefect
+            - step-functions
+            - none
+          enumNames:
+            - "Apache Airflow (MWAA)"
+            - "Dagster"
+            - "Prefect"
+            - "AWS Step Functions"
+            - "None (EventBridge/Cron)"
+          default: airflow
+          description: Workflow orchestration platform
+
+    - title: Runtime
+      properties:
+        pythonVersion:
+          title: Python Version
+          type: string
+          enum:
+            - "3.12"
+            - "3.11"
+          enumNames:
+            - "3.12 (Recommended)"
+            - "3.11 (LTS)"
+          default: "3.12"
+        computeEngine:
+          title: Compute Engine
+          type: string
+          enum:
+            - spark
+            - dask
+            - polars
+            - pandas
+          enumNames:
+            - "Apache Spark (EMR/Glue)"
+            - "Dask (Distributed)"
+            - "Polars (Fast Single-Node)"
+            - "Pandas (Simple)"
+          default: polars
+          description: Data processing engine
+
+    - title: Data Sources
+      properties:
+        sourceType:
+          title: Primary Source
+          type: string
+          enum:
+            - s3
+            - redshift
+            - postgres
+            - mysql
+            - dynamodb
+            - kinesis
+            - kafka
+            - msk
+            - api
+          enumNames:
+            - "S3 (Data Lake)"
+            - "Redshift"
+            - "PostgreSQL (RDS)"
+            - "MySQL (RDS)"
+            - "DynamoDB"
+            - "Kinesis (Streaming)"
+            - "Kafka (Self-managed)"
+            - "Amazon MSK (IAM Auth)"
+            - "REST API"
+          default: s3
+          description: Primary data source
+        sinkType:
+          title: Primary Sink
+          type: string
+          enum:
+            - s3
+            - redshift
+            - snowflake
+            - bigquery
+            - postgres
+            - dynamodb
+            - elasticsearch
+          enumNames:
+            - "S3 (Data Lake)"
+            - "Redshift"
+            - "Snowflake"
+            - "BigQuery"
+            - "PostgreSQL"
+            - "DynamoDB"
+            - "Elasticsearch/OpenSearch"
+          default: s3
+          description: Primary data destination
+
+    - title: Data Format & Quality
+      properties:
+        dataFormat:
+          title: Data Format
+          type: string
+          enum:
+            - parquet
+            - delta
+            - iceberg
+            - json
+            - csv
+          enumNames:
+            - "Parquet (Recommended)"
+            - "Delta Lake"
+            - "Apache Iceberg"
+            - "JSON/JSONL"
+            - "CSV"
+          default: parquet
+          description: Primary data format
+        dataQuality:
+          title: Data Quality Framework
+          type: string
+          enum:
+            - great-expectations
+            - pandera
+            - soda
+            - none
+          enumNames:
+            - "Great Expectations"
+            - "Pandera (Pandas/Polars)"
+            - "Soda Core"
+            - "None"
+          default: pandera
+          description: Data validation framework
+        schemaRegistry:
+          title: Schema Registry
+          type: boolean
+          default: false
+          description: Enable AWS Glue Schema Registry for streaming data
+
+    - title: Features
+      properties:
+        secretsManager:
+          title: Secrets Management
+          type: string
+          enum:
+            - aws-secrets-manager
+            - parameter-store
+          enumNames:
+            - "AWS Secrets Manager"
+            - "AWS Parameter Store"
+          default: aws-secrets-manager
+        notifications:
+          title: Failure Notifications
+          type: string
+          enum:
+            - sns
+            - slack
+            - pagerduty
+            - none
+          enumNames:
+            - "SNS"
+            - "Slack"
+            - "PagerDuty"
+            - "None"
+          default: sns
+          description: Pipeline failure notifications
+        dataLineage:
+          title: Data Lineage
+          type: boolean
+          default: true
+          description: Enable OpenLineage for data lineage tracking
+
+    - title: Repository
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
+  steps:
+    - id: fetch-skeleton
+      name: Fetch Skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          owner: ${{ parameters.owner }}
+          description: ${{ parameters.description }}
+          pipelineType: ${{ parameters.pipelineType }}
+          orchestrator: ${{ parameters.orchestrator }}
+          pythonVersion: ${{ parameters.pythonVersion }}
+          computeEngine: ${{ parameters.computeEngine }}
+          sourceType: ${{ parameters.sourceType }}
+          sinkType: ${{ parameters.sinkType }}
+          dataFormat: ${{ parameters.dataFormat }}
+          dataQuality: ${{ parameters.dataQuality }}
+          schemaRegistry: ${{ parameters.schemaRegistry }}
+          secretsManager: ${{ parameters.secretsManager }}
+          notifications: ${{ parameters.notifications }}
+          dataLineage: ${{ parameters.dataLineage }}
+
+    - id: publish
+      name: Publish to GitHub
+      action: publish:github
+      input:
+        allowedHosts:
+          - github.com
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: main
+        protectDefaultBranch: true
+        repoVisibility: private
+
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in Backstage
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}

@@ -1,0 +1,49 @@
+{%- if values.pipelineType == "batch" %}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ${{values.name}}
+  labels:
+    app: ${{values.name}}
+spec:
+  schedule: "0 * * * *"  # Every hour
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: ${{values.name}}
+          annotations:
+            instrumentation.opentelemetry.io/inject-python: "true"
+        spec:
+          serviceAccountName: ${{values.name}}
+          containers:
+            - name: ${{values.name}}
+              image: ghcr.io/${{values.orgName}}/${{values.name}}:latest
+              imagePullPolicy: Always
+              command: ["python", "-m", "src.cli", "run"]
+              resources:
+                requests:
+                  memory: "1Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "4Gi"
+                  cpu: "2000m"
+              env:
+                - name: ENVIRONMENT
+                  value: "production"
+                - name: OTEL_SERVICE_NAME
+                  value: "${{values.name}}"
+                - name: OTEL_EXPORTER_OTLP_ENDPOINT
+                  value: "http://grafana-alloy.observability:4318"
+                - name: OTEL_RESOURCE_ATTRIBUTES
+                  value: "service.namespace=team-${{values.owner}},deployment.environment=production"
+              envFrom:
+                - secretRef:
+                    name: ${{values.name}}-secrets
+          restartPolicy: OnFailure
+{%- endif %}
