@@ -1,21 +1,8 @@
 apiVersion: backstage.io/v1alpha1
-kind: Template
+kind: Location
 metadata:
   name: data-pipeline-template
-  title: Data Pipeline
   description: Real-time analytics pipeline with Apache Druid OLAP and orchestration
-  annotations:
-    backstage.io/techdocs-ref: dir:.
-  tags:
-    - druid
-    - olap
-    - kafka
-    - kinesis
-    - argo-workflows
-    - data
-    - analytics
-    - real-time
 spec:
-  type: data-pipeline
-  lifecycle: production
-  owner: platform
+  targets:
+    - ./template.yaml
