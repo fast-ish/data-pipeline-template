@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw
+    database: "{{ env_var('SNOWFLAKE_DATABASE', 'DEV') }}"
+    schema: raw
+    tables:
+      - name: example
+        description: Example raw table

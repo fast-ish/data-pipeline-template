@@ -1,0 +1,23 @@
+${{ values.name | replace("-", "_") }}:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: TRANSFORMER
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'DEV') }}"
+      warehouse: ${{ values.snowflakeWarehouse }}
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'DBT') }}"
+      threads: 4
+    prod:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: TRANSFORMER
+      database: PROD
+      warehouse: ${{ values.snowflakeWarehouse }}
+      schema: DBT
+      threads: 8

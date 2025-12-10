@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${{values.name}}-config
+  labels:
+    app: ${{values.name}}
+data:
+  PIPELINE_NAME: "${{values.name}}"
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
