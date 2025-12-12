@@ -1,0 +1,22 @@
+# =============================================================================
+# ARGO CI CONFIGURATION
+# =============================================================================
+language: python
+team: ${{values.owner | replace("group:", "") | replace("team-", "")}}
+
+config:
+  python-version: "${{values.pythonVersion}}"
+  package-manager: "uv"
+  skip-tests: false
+{%- if values.pipelineType == "streaming" %}
+  deploy-enabled: true
+  rollout-strategy: bluegreen
+{%- else %}
+  # Batch pipelines are typically run as jobs, not deployments
+  deploy-enabled: false
+{%- endif %}
+
+  pipeline:
+    type: "${{values.pipelineType}}"
+    orchestrator: "${{values.orchestrator}}"
+    compute-engine: "${{values.computeEngine}}"
