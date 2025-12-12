@@ -270,6 +270,11 @@ spec:
         defaultBranch: main
         protectDefaultBranch: true
         repoVisibility: private
+        topics:
+          - data-pipeline
+          - python
+          - ${{ parameters.pipelineType }}
+          - ${{ parameters.owner }}
 
     - id: register
       name: Register Component
@@ -278,6 +283,38 @@ spec:
         repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
         catalogInfoPath: /catalog-info.yaml
 
+    - id: create-gitops-pr
+      name: Create GitOps Pull Request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=fast-ish&repo=aws-idp-gitops
+        branchName: add-app-${{ parameters.name }}
+        title: "feat(${{ parameters.name }}): add new data pipeline"
+        description: |
+          ## New Application: ${{ parameters.name }}
+
+          This PR adds a new data pipeline to the GitOps repository.
+
+          ### Application Details
+          | Property | Value |
+          |----------|-------|
+          | **Name** | ${{ parameters.name }} |
+          | **Owner** | ${{ parameters.owner }} |
+          | **Type** | Data Pipeline |
+          | **Pipeline Type** | ${{ parameters.pipelineType }} |
+          | **Orchestrator** | ${{ parameters.orchestrator }} |
+          | **Compute Engine** | ${{ parameters.computeEngine }} |
+
+          ### Data Flow
+          - **Source**: ${{ parameters.sourceType }}
+          - **Sink**: ${{ parameters.sinkType }}
+          - **Format**: ${{ parameters.dataFormat }}
+
+          ---
+          *Created via Backstage Data Pipeline Template*
+        sourcePath: k8s
+        targetPath: teams/${{ parameters.owner | replace("group:", "") | replace("team-", "") }}/apps/${{ parameters.name }}
+
   output:
     links:
       - title: Repository
@@ -285,3 +322,6 @@ spec:
       - title: Open in Backstage
         icon: catalog
         entityRef: ${{ steps.register.output.entityRef }}
+      - title: GitOps Pull Request
+        icon: github
+        url: ${{ steps['create-gitops-pr'].output.remoteUrl }}
